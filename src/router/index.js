@@ -6,6 +6,7 @@ const home =() =>import('views/home/Home')
 const category = () => import('views/category/Category')
 const cart = () => import('views/cart/Cart')
 const profile = () => import('views/profile/Profile')
+const detail = () => import('views/detail/Detail')
 
 // 1.安装路由插件功能
 Vue.use(VueRouter)
@@ -31,6 +32,11 @@ const routes=[
   {
     path: '/profile',
     component: profile
+  },
+  {
+    // 动态路由，跳到详情页
+    path: '/detail/:iid',
+    component: detail
   }
 ]
 

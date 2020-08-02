@@ -53,11 +53,12 @@
   import tabcontrol from 'components/content/tabControl/TabControl'
   import goodslist from 'components/content/goods/GoodsList'
   import scroll from 'components/common/scroll/Scroll'
-  import backtop from 'components/content/backTop/BackTop'
+  
 
   // 导入网络请求的方法，便于进行网络请求
   import {getHomeMultiData, getHomeGoods} from 'network/home'
   import {debounce} from 'common/utils'
+  import {itemListenerMixin, backTopMixin} from 'common/mixin'
 
   export default {
     name: "Home",
@@ -71,9 +72,12 @@
       tabcontrol,
       goodslist,
       scroll,
-      backtop,
 
     },
+
+    // 混入，将一些公共的代码混入到一起，然后可以在多个地方使用
+    mixins: [itemListenerMixin, backTopMixin],
+
     data() {
       return {
         // 定义属性用于保存请求到的数据
@@ -87,11 +91,10 @@
           'sell': {page: 0, list:[]},
         },
         currentType: 'pop',
-        isShowBackTop: false,
         tabOffSetTop: 0,
         isTabFixed: false,
         saveY: 0,
-
+        
       }
     },
     computed: {
@@ -117,9 +120,13 @@
       this.$refs.scroll.refresh()
     },
 
-    // 路由跳出时，保存一个离开时的滚动位置saveY
     deactivated() {
+      // console.log('home deactivated');
+      // 路由跳出时，保存一个离开时的滚动位置saveY
       this.saveY = this.$refs.scroll.getScrollY()
+
+      // 路由跳出时,取消全局事件的监听
+      this.$bus.$off('itemImgLoad',this.itemimglistener)
     },
 
     // 生命周期函数created()，在组件创建完之后回调，一般在created里面只写方法调用的逻辑，具体的方法实现写在methods里面
@@ -135,20 +142,22 @@
 
     },
 
-    mounted() {
+    // mounted() {
 
-      // template模板挂载完后，通过事件总线监听GoodsListItem.vue发出的itemImgLoad事件，监听到了一次itemImgLoad事件就表示一张图片加载完了，之后就调用scroll组件里面的refresh方法，刷新滚动。
-      // 优化性能，调用防抖函数
-      const refresh = debounce(this.$refs.scroll.refresh,50)
-      // 通过事件总线监听事件
-      this.$bus.$on('itemImgLoad',() =>{
-        // this.$refs.scroll.refresh();
-        // console.log('------');
-        refresh()
-      })
-      // 这里获取的offsetTop值也是错误的，因为图片还没有加载完，图片的高度没有包括进去
-      // console.log(this.$refs.tabControl2.$el.offsetTop);
-    },
+    //   // template模板挂载完后，通过事件总线监听GoodsListItem.vue发出的itemImgLoad事件，监听到了一次itemImgLoad事件就表示一张图片加载完了，之后就调用scroll组件里面的refresh方法，刷新滚动。
+    //   // 优化性能，调用防抖函数
+    //   const refresh = debounce(this.$refs.scroll.refresh,50)
+
+    //   this.itemimglistener = () =>{
+    //     refresh()
+    //   }
+    //   // 通过事件总线监听事件
+    //   this.$bus.$on('itemImgLoad',this.itemimglistener)
+
+
+    //   // 这里获取的offsetTop值也是错误的，因为图片还没有加载完，图片的高度没有包括进去
+    //   // console.log(this.$refs.tabControl2.$el.offsetTop);
+    // },
 
     methods: {
       
@@ -176,13 +185,14 @@
       },
 
       // 当子组件backtop发生点击时，就执行backClick()方法，通过this.$refs.scroll拿到含有ref="scroll"的scroll子组件，并调用scroll子组件里面已经写好的scrollTo方法回到当前页面的顶部。
-      backClick() {
-        this.$refs.scroll.scrollTo(0, 0);
-      },
-      // 当滚动区域发生滚动时，Scroll子组件监听到后给父组件home发送自定义事件并把position作为参数传入，父组件监听到自定义事件后调用contentScroll方法，通过(-position + y) > 1000决定属性isShowBackTop是true还是false，进而决定子组件backtop是否显示。
+      // backClick() {
+      //   this.$refs.scroll.scrollTo(0, 0);
+      // },
+
+      // 当滚动区域发生滚动时，Scroll子组件监听到后给父组件home发送自定义事件并把position作为参数传入，父组件监听到自定义事件后调用contentScroll方法，里面又调用listenbacktop方法，通过(-position + y) > 1000决定属性isShowBackTop是true还是false，进而决定子组件backtop是否显示。
       contentScroll(position) {
         // 1.判断BackTop是否显示
-        this.isShowBackTop = (-position.y) > 1000
+        this.listenbacktop(position)
 
         // 2.实现tabControl吸顶效果
         this.isTabFixed = (-position.y) > this.tabOffSetTop
@@ -198,6 +208,7 @@
       // 方案二：在Home里面使用两次tabcontrol组件，分别设置不同的ref值用于区分。首先必须知道滚动到多少时, 开始有吸顶效果, 这个时候就需要获取tabcontrol的offsetTop属性值(指 obj 距离上方或上层控件的位置)，组件没有offsetTop属性但是里面的元素有offsetTop属性，通过tabcontrol.$el.offsetTop便可获取。但是, 如果直接在mounted中获取tabControl的offsetTop,由于图片加载较慢，图片还没加载完就获取到的offsetTop值是不正确。所以先要监听HomeSwiper中的图片加载，加载完成后发出事件, 再在Home.vue中获取正确的值，此时获取的是包含ref="tabControl2"的tabcontrol组件的offsetTop值。然后到之前已经写好的contentScroll方法(监听到滚动后调用的方法)，拿到实时滚动值position和offsetTop属性值进行比较，当滚动值position大于offsetTop属性值时就让包含ref="tabControl1"的tabcontrol组件进行显示，而此时包含ref="tabControl2"的tabcontrol组件已经滚动到顶部并被遮挡了，从而实现了tabControl的吸顶效果。
       swiperImgLoad(){
         // console.log('-----');
+        // $el挂载组件模板里面的根元素。
         this.tabOffSetTop = this.$refs.tabControl2.$el.offsetTop;
         // console.log(this.tabOffSetTop);
       },

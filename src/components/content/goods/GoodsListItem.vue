@@ -1,7 +1,7 @@
 <!--  -->
 <template>
   <div class="goodsitem" @click="itemclick">
-    <img :src="gitem.show.img" alt="" @load="imgLoad">
+    <img v-lazy="showImage" alt="" @load="imgLoad">
     <div class="goodsinfo">
       <p>{{gitem.title}}</p>
       <span class="price">{{gitem.price}}</span>
@@ -21,6 +21,12 @@
         }
       }
     },
+    computed: {
+      // 由于GoodsListItem组件在多个地方使用，不同地方获取图片的方式不同，所以要做一个判断。
+      showImage() {
+        return this.gitem.image || this.gitem.show.img
+      }
+    },
     data () {
       return {
 
@@ -37,8 +43,16 @@
       // 之后通过Vue.prototype.$bus = new Vue(),表示在vue的原型上定义事件总线$bus，通过事件总线便可将GoodsListItem.vue中的事件传入到Home.vue中。
 
       imgLoad() {
-        // 通过事件总线发送事件
+        // 通过事件总线发送事件,不同地方都发射同一事件
         this.$bus.$emit('itemImgLoad')
+
+        // 由于GoodsListItem组件在多个地方使用，不同地方发射不同事件
+        // if(this.$route.path.indexOf('/home')) {
+        //   this.$bus.$emit('itemImgLoad')
+        // }
+        // else if (this.$route.path.indexOf('/detail')) {
+        //   this.$bus.$emit('detailitemimgload')
+        // }
       },
 
       itemclick() {

@@ -32,6 +32,8 @@
     methods: {
       itemclick(index) {
         this.currentIndex = index;
+        // 发生点击时，向父组件发射自定义事件
+        this.$emit('navbarclick',index)
       },
       backclick() {
         this.$router.back()

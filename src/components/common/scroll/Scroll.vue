@@ -89,6 +89,7 @@
         this.scroll && this.scroll.finishPullUp()
       },
 
+      // 获取滚动y值
       getScrollY() {
         return this.scroll ? this.scroll.y : 0
       }

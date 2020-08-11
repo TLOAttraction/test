@@ -1,5 +1,9 @@
 <template>
-  <h2>分类</h2>
+  <div>
+    <h2>分类</h2>
+    <h1>我是项目新增的内容</h1>
+    <div class="box1"></div>
+  </div>
 </template>
 
 <script>
@@ -9,5 +13,10 @@
 </script>
 
 <style scoped>
-
+  .box1{
+    width: 100px;
+    height: 100px;
+    background-color: #d62708ea;
+    color: blue;
+  }
 </style>

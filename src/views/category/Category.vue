@@ -13,13 +13,14 @@
 </script>
 
 <style scoped>
+  .box{
+    color: blue;
+  }
   .box1{
     width: 100px;
     height: 100px;
     background-color: #d62708ea;
     
   }
-  .box{
-    color: blue;
-  }
+  
 </style>
